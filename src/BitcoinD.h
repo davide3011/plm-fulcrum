@@ -61,6 +61,7 @@ struct BitcoinDInfo {
     RpcSupportInfo rpcSupportInfo;
     bool isCore = false; ///< true if we are actually connected to /Satoshi.. node (Bitcoin Core)
     bool isLTC = false; ///< true if we are actually connected to /LitecoinCore.. node (Litecoin)
+    bool isPLM = false; ///< true if we are actually connected to /Palladium.. node (Palladium Core, a SegWit Bitcoin Core fork)
     bool isBU = false; ///< true if subversion string starts with "/BCH Unlimited:"
     bool isFlowee = false; ///< true if subversion string starts with "/Flowee"
     bool isBchd = false; ///< true if remote bitcoind subversion is: /bchd:...
@@ -147,8 +148,8 @@ signals:
     void inWarmUp(const QString &);
 
     /// Emitted as soon as we read the bitcoind subversion. If it starts with /Satoshi:.., we emit this
-    /// with Coin::BTC, if subversion is /LitecoinCore... we emit Coin::LTC, otherwise, we emit it with
-    /// Coin::BCH.
+    /// with Coin::BTC, if subversion is /LitecoinCore... we emit Coin::LTC, if subversion is /Palladium...
+    /// we emit Coin::PLM, otherwise, we emit it with Coin::BCH.
     void coinDetected(BTC::Coin);
 
     /// Emitted whenever the BitcoinDZmqNotifications change (this is also emitted the first time we retrieve them
