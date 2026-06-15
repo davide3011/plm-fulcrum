@@ -44,8 +44,8 @@
 /// this namespace is not specific to Bitcoin (Core), but applies to BCH as well.
 namespace BTC
 {
-    /// Used by the Storage and Controller subsystem to figure out what coin we are on (BCH vs BTC vs LTC)
-    enum class Coin { Unknown = 0, BCH, BTC, LTC };
+    /// Used by the Storage and Controller subsystem to figure out what coin we are on (BCH vs BTC vs LTC vs PLM)
+    enum class Coin { Unknown = 0, BCH, BTC, LTC, PLM };
 
     QString coinToName(Coin);
     Coin coinFromName(const QString &);
