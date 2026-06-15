@@ -269,6 +269,12 @@ namespace {
         if (BTC::HashInPlace(tx) != qba) throw Exception("Txn hash in place failed");
         if (BTC::HashInPlace(tx, false, /* reversed = */true) != rhash) throw Exception("Txn hash in place reversed failed");
 
+        Log() << "Testing PLM coin name roundtrip ...";
+        if (BTC::coinToName(BTC::Coin::PLM) != "PLM") throw Exception("coinToName(PLM) returned wrong name");
+        if (BTC::coinFromName("PLM") != BTC::Coin::PLM) throw Exception("coinFromName(\"PLM\") did not return Coin::PLM");
+        if (BTC::coinFromName("plm") != BTC::Coin::Unknown) throw Exception("coinFromName should be case-sensitive (\"plm\" must return Unknown)");
+        if (BTC::coinFromName(BTC::coinToName(BTC::Coin::PLM)) != BTC::Coin::PLM) throw Exception("PLM coin name roundtrip failed");
+
         Log(Log::BrightWhite) << "All btcmisc unit tests passed!";
     }
 

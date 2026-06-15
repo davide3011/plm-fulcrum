@@ -793,6 +793,62 @@ namespace BTC
             if (!Address::test())
                 throw Exception("address test failed");
         });
+
+        const auto t_plm = App::registerTest("plm_address", []{
+            using Print = Log;
+
+            // --- P2PKH mainnet: must use PLM version byte 0x37 (55) -> addresses start with 'P' ---
+            // Parse a well-known BCH/BTC P2PKH mainnet address and verify the PLM re-encoding.
+            constexpr auto srcP2PKH = "1C3SoftYBC2bbDzCadZxDrfbnobEXLBLQZ";
+            const Address addrP2PKH(srcP2PKH);
+            if (!addrP2PKH.isValid() || addrP2PKH.kind() != Address::Kind::P2PKH || addrP2PKH.net() != Net::MainNet)
+                throw Exception("plm_address: failed to parse P2PKH source address");
+
+            const QString plmP2PKH = addrP2PKH.toPalladiumString();
+            Print() << "PLM P2PKH: " << plmP2PKH;
+
+            std::vector<unsigned char> decP2PKH;
+            if (!bitcoin::DecodeBase58Check(plmP2PKH.toStdString(), decP2PKH) || decP2PKH.empty())
+                throw Exception("plm_address: failed to Base58Check-decode PLM P2PKH address");
+            if (decP2PKH[0] != 0x37u)
+                throw Exception(QString("plm_address: P2PKH version byte is 0x%1, expected 0x37")
+                                    .arg(decP2PKH[0], 2, 16, QLatin1Char('0')));
+            const QByteArray payP2PKH(reinterpret_cast<const char *>(decP2PKH.data() + 1), int(decP2PKH.size() - 1));
+            if (payP2PKH != addrP2PKH.hash())
+                throw Exception("plm_address: P2PKH payload mismatch after re-encoding");
+            if (!plmP2PKH.startsWith('P'))
+                throw Exception("plm_address: PLM P2PKH address should start with 'P'");
+            Print() << "PLM P2PKH version byte 0x37 OK, starts with '" << plmP2PKH.left(1) << "'";
+
+            // --- P2SH mainnet: version byte 0x05 unchanged -> addresses start with '3' ---
+            constexpr auto srcP2SH = "3NoBpEBHZq6YqwUBdPAMW41w5BTJSC7yuQ";
+            const Address addrP2SH(srcP2SH);
+            if (!addrP2SH.isValid() || addrP2SH.kind() != Address::Kind::P2SH || addrP2SH.net() != Net::MainNet)
+                throw Exception("plm_address: failed to parse P2SH source address");
+
+            const QString plmP2SH = addrP2SH.toPalladiumString();
+            Print() << "PLM P2SH:  " << plmP2SH;
+
+            std::vector<unsigned char> decP2SH;
+            if (!bitcoin::DecodeBase58Check(plmP2SH.toStdString(), decP2SH) || decP2SH.empty())
+                throw Exception("plm_address: failed to Base58Check-decode PLM P2SH address");
+            if (decP2SH[0] != 0x05u)
+                throw Exception(QString("plm_address: P2SH version byte is 0x%1, expected 0x05")
+                                    .arg(decP2SH[0], 2, 16, QLatin1Char('0')));
+            if (!plmP2SH.startsWith('3'))
+                throw Exception("plm_address: PLM P2SH address should start with '3'");
+            Print() << "PLM P2SH version byte 0x05 OK, starts with '" << plmP2SH.left(1) << "'";
+
+            // --- Invalid address: toPalladiumString() must return empty ---
+            const Address bad("1NotAValidAddress!!!!");
+            if (bad.isValid())
+                throw Exception("plm_address: invalid address parsed as valid");
+            if (!bad.toPalladiumString().isEmpty())
+                throw Exception("plm_address: toPalladiumString() on invalid address must return empty string");
+            Print() << "PLM invalid address guard OK";
+
+            Print() << "All PLM address tests passed!";
+        });
     }
 
 #endif
