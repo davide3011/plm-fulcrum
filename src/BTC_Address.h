@@ -105,6 +105,9 @@ namespace BTC {
         /// Hack to support converting any address to LTC TODO: Proper support for LTC addresses
         QString toLitecoinString() const;
 
+        /// Hack to support converting any address to Palladium (PLM). TODO: Proper support for PLM addresses
+        QString toPalladiumString() const;
+
         Address & operator=(const QString &legacyOrCash) { return (*this = Address::fromString(legacyOrCash)); }
         Address & operator=(const char *legacyOrCash) { return (*this = QString(legacyOrCash)); }
         Address & operator=(const QByteArray &legacyOrCash) { return (*this = QString(legacyOrCash)); }

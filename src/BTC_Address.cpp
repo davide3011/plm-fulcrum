@@ -287,6 +287,15 @@ namespace BTC
         return toString(true, verByteOverride);
     }
 
+    QString Address::toPalladiumString() const
+    {
+        std::optional<Byte> verByteOverride;
+        // On Palladium mainnet, P2PKH uses version byte 0x37 (55); P2SH uses 0x05 (5), same as BCH/BTC.
+        if (_net == Net::MainNet && _kind == Kind::P2PKH)
+            verByteOverride = Byte{0x37};
+        return toString(true, verByteOverride);
+    }
+
 
     QString Address::toShortString() const
     {
