@@ -36,6 +36,9 @@ Thumbs.db
 /.qmake.cache
 /.qmake.stash
 
+CLAUDE.md
+coin_spec.md
+
 # qtcreator generated files
 *.pro.user*
 
