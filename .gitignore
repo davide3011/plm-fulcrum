@@ -35,6 +35,8 @@ Thumbs.db
 *.rc
 /.qmake.cache
 /.qmake.stash
+/config.log
+/config.tests/
 
 CLAUDE.md
 coin_spec.md
