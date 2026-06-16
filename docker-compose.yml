@@ -1,0 +1,97 @@
+networks:
+  palladium:
+    name: palladium   # fixed name — independent of the working directory
+
+services:
+
+  # ── SSL certificate setup (runs once, exits) ─────────────────────────────
+  setup:
+    image: debian:bookworm-slim
+    volumes:
+      - ./ssl:/ssl
+    command:
+      - bash
+      - -c
+      - |
+        apt-get update -qq && apt-get install -y -qq --no-install-recommends openssl ca-certificates > /dev/null 2>&1
+        if [ -f /ssl/fulcrum-plm.crt ] && [ -f /ssl/fulcrum-plm.key ]; then
+          echo '[setup] SSL certificate already exists — skipping.'
+          openssl x509 -in /ssl/fulcrum-plm.crt -noout -subject -dates
+        else
+          echo '[setup] Generating self-signed SSL certificate (RSA-4096, 10 years)...'
+          openssl req -x509 -newkey rsa:4096 \
+            -keyout /ssl/fulcrum-plm.key \
+            -out    /ssl/fulcrum-plm.crt \
+            -days 3650 -nodes -subj '/CN=plm-fulcrum'
+          chmod 600 /ssl/fulcrum-plm.key
+          echo '[setup] Done.'
+        fi
+
+  # ── Palladium Core node ──────────────────────────────────────────────────
+  palladiumd:
+    build:
+      context: palladium-node
+    image: palladium-node:local
+    container_name: palladium-node
+    restart: unless-stopped
+    networks:
+      - palladium
+    ports:
+      - "0.0.0.0:2333:2333"   # P2P (external peers)
+      # RPC (2332) and ZMQ (28332-28335) are NOT published on the host.
+      # Fulcrum reaches them via the palladium network as palladiumd:<port>.
+
+    env_file: .env
+
+    volumes:
+      - ./palladium-node/.palladium:/root/.palladium
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    healthcheck:
+      test:
+        - "CMD"
+        - "palladium-cli"
+        - "-conf=/root/.palladium/palladium.conf"
+        - "-datadir=/root/.palladium"
+        - "getblockchaininfo"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
+
+  # ── Fulcrum SPV server (Electrum protocol) ───────────────────────────────
+  fulcrum-plm:
+    build:
+      context: .
+    image: fulcrum-plm:local
+    container_name: fulcrum-plm
+    restart: unless-stopped
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+      palladiumd:
+        condition: service_healthy
+    networks:
+      - palladium
+
+    env_file: .env
+
+    volumes:
+      - ./fulcrum-db:/data/db
+      - ./ssl:/data/ssl:ro
+
+    ports:
+      - "0.0.0.0:50001:50001"   # Electrum TCP
+      - "0.0.0.0:50002:50002"   # Electrum SSL
+      - "127.0.0.1:8000:8000"   # admin (host-only)
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

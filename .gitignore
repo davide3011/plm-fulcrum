@@ -41,6 +41,15 @@ Thumbs.db
 CLAUDE.md
 coin_spec.md
 
+# Docker secrets — never commit
+.env
+
+# Docker runtime data — track the dir (via .gitkeep) but not the content
+fulcrum-db/*
+!fulcrum-db/.gitkeep
+ssl/*
+!ssl/.gitkeep
+
 # qtcreator generated files
 *.pro.user*
 
