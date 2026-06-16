@@ -58,6 +58,39 @@ docker compose logs -f fulcrum-plm
 - A self-signed TLS certificate is generated on first run into `ssl/`.
 - Ports exposed on the host: `2333` (PLM P2P), `50001`/`50002` (Electrum TCP/SSL), `127.0.0.1:8000` (admin, host-only).
 
+### Running palladiumd standalone (no Docker)
+
+If you'd rather not use Docker, you can get `palladiumd`/`palladium-cli` directly:
+
+```bash
+./palladium-node/daemon/download-binaries.sh --outdir /usr/local/bin
+```
+
+This downloads the latest prebuilt release from [palladium-coin/palladiumcore](https://github.com/palladium-coin/palladiumcore) for your platform/architecture (`--platform`/`--arch`/`--repo` let you override the defaults; see `--help`). To build `palladiumd` from source instead, follow the instructions in that repository.
+
+Minimal `~/.palladium/palladium.conf` to pair with `fulcrum-plm`:
+
+```ini
+txindex=1
+server=1
+rpcuser=palladiumrpc
+rpcpassword=<strong-password>
+rpcport=2332
+rpcbind=127.0.0.1
+rpcallowip=127.0.0.1
+zmqpubrawblock=tcp://127.0.0.1:28332
+zmqpubrawtx=tcp://127.0.0.1:28333
+zmqpubhashblock=tcp://127.0.0.1:28334
+listen=1
+port=2333
+```
+
+```bash
+palladiumd -conf=$HOME/.palladium/palladium.conf -daemon
+```
+
+Once it's running and synced, point `fulcrum-plm` at it as described below.
+
 ### How To Compile
 
 To compile without Docker, you'll need a `palladiumd` node running separately. To compile Fulcrum itself:
