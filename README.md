@@ -59,6 +59,31 @@ docker compose logs -f fulcrum-plm
 - Ports exposed on the host: `2333` (PLM P2P), `50001`/`50002` (Electrum TCP/SSL), `127.0.0.1:8000` (admin, host-only).
 - If any of those host ports are already in use, remap only the host side of the binding in `docker-compose.yml` (the `ports:` section of the relevant service), leaving the container-side port unchanged, e.g. `"60001:50001"`. No changes are needed to `doc/fulcrum-plm-docker.conf.template` or `.env`.
 
+#### Peering across multiple servers
+
+By default, multiple `fulcrum-plm` instances do not discover each other — only the underlying `palladiumd` nodes find each other via Bitcoin-style P2P. Setting up Fulcrum-to-Fulcrum peering across N servers requires touching one file once (shared by all servers) and one setting per-server. Do it in this order:
+
+1. **Collect the public IP of every machine** that will run this stack, and decide which Electrum TCP/SSL ports each one will expose (the `50001`/`50002` defaults, unless you remapped them per-host as described above).
+
+2. **Edit `resources/plm/servers.json`** (same JSON schema as `resources/btc/servers.json`) and list every machine, keyed by its public IP, e.g.:
+   ```json
+   {
+       "203.0.113.10": { "pruning": "-", "t": "50001", "s": "50002", "version": "1.4.2" },
+       "203.0.113.11": { "pruning": "-", "t": "50001", "s": "50002", "version": "1.4.2" }
+   }
+   ```
+   This list only needs the *other* servers for the initial bootstrap — each instance is free to include itself too, since Fulcrum filters its own address out automatically. This file is compiled into the binary as a Qt resource (declared in `resources.qrc`), so it is **not** read at runtime: any edit requires a rebuild (step 3).
+
+3. **Rebuild before deploying to each machine**:
+   - Docker: `docker compose build fulcrum-plm` (the `Dockerfile` builds Fulcrum from source, so the updated `servers.json` gets baked in).
+   - Native build: `qmake && make -j$(nproc)`.
+
+4. **On each machine, set its own `PUBLIC_HOST` in `.env`** to *that* server's public IP (not a shared value — see the comment in `.env.example`). Also set `PUBLIC_TCP_PORT`/`PUBLIC_SSL_PORT` to match whatever you used in step 1/2 for that host, and leave `ANNOUNCE=true` so the server advertises itself (set it to `false` instead if you only want this server to discover peers without being listed by them).
+
+5. **Start (or restart) the stack on each machine**: `docker compose up -d` (or `docker compose up -d --force-recreate fulcrum-plm` if it was already running with the old image).
+
+6. **Verify discovery** once all servers are up: `./FulcrumAdmin -p 8000 peers` (admin RPC, host-bound on `127.0.0.1:8000`) should list the other VPS after a short propagation delay — Fulcrum's peering protocol exchanges peer lists automatically from that point on, so `resources/plm/servers.json` only needs to bootstrap the very first connections.
+
 ### Running palladiumd standalone (no Docker)
 
 If you'd rather not use Docker, you can get `palladiumd`/`palladium-cli` directly:
