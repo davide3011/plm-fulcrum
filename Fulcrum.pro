@@ -1,6 +1,7 @@
 #
 # Fulcrum - A fast & nimble SPV Server for Bitcoin Cash
 # Copyright (C) 2019-2026 Calin A. Culianu <calin.culianu@gmail.com>
+# Modified for Palladium (PLM) support, Copyright (C) 2025-2026 Davide Grilli <davide.grilli@outlook.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
