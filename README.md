@@ -1,252 +1,131 @@
-# ![Image FulcrumLogo](https://raw.githubusercontent.com/cculianu/Fulcrum-art/master/F-circle2_grn_64.png) Fulcrum
+# ![Image FulcrumLogo](https://raw.githubusercontent.com/cculianu/Fulcrum-art/master/F-circle2_grn_64.png) plm-fulcrum
 
-[![Docker Build](https://github.com/cculianu/Fulcrum/actions/workflows/publish.yml/badge.svg)](https://github.com/cculianu/Fulcrum/actions/workflows/publish.yml)
-[![Copr build status](https://copr.fedorainfracloud.org/coprs/jonny/BitcoinCash/package/fulcrum/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/jonny/BitcoinCash/package/fulcrum/)
+A fast & nimble SPV server for **Palladium (PLM)** — a decentralized cryptocurrency built on Bitcoin's proven codebase, enhanced with modern features including Taproot support.
 
-A fast & nimble SPV server for Bitcoin Cash, Bitcoin BTC, and Litecoin. 
-
-For more information, visit [The Official Fulcrum Website™️](https://fulcrumserver.org/).
+This is a fork of [Fulcrum](https://fulcrumserver.org/), adapted to speak the Electrum protocol against [`palladiumd`](https://github.com/palladium-coin/palladiumcore) instead of bitcoind/BCHN. For more on Palladium itself, see [palladiumblockchain.net](https://palladiumblockchain.net) / [palladium-coin.com](https://palladium-coin.com).
 
 #### Copyright
-(C) 2019-2025 Calin Culianu <calin.culianu@gmail.com>
+(C) 2019-2026 Calin A. Culianu \<calin.culianu@gmail.com\> (original Fulcrum)
+(C) 2025-2026 Davide Grilli \<davide.grilli@outlook.com\> (Palladium support)
+
+See [AUTHORS](AUTHORS) for details on who did what.
 
 #### License:
-GPLv3. See the included `LICENSE.txt` file or [visit gnu.org and read the license](https://www.gnu.org/licenses/gpl-3.0.html).
+GPLv3, inherited unchanged from upstream Fulcrum. See the included `LICENSE.txt` file or [visit gnu.org and read the license](https://www.gnu.org/licenses/gpl-3.0.html).
 
 ![Image Fulcrum](https://raw.githubusercontent.com/cculianu/Fulcrum-art/master/F_bal_stylized_1_256.png)
 
 ### Highlights:
 
-- *Fast:* Written in 100% modern `C++20` using multi-threaded and asynchronous programming techniques.
-- *A drop-in replacement for ElectrumX:* Fulcrum is 100% protocol-level compatible with the [Electrum Cash 1.6 protocol](https://electrum-cash-protocol.readthedocs.io/en/latest/). Existing server admins should feel right at home with this software since installation and management of it is nearly identical to an ElectrumX server.
-- *Cross-platform:* While this codebase was mainly developed and tested on MacOS, Windows and Linux, it should theoretically work on any modern OS (such as *BSD) that has Qt5 or Qt6 Networking available.
-- ***NEW!*** *Triple-coin:* Supports BCH, BTC and LTC.
+- *Fast:* Written in 100% modern `C++20` using multi-threaded and asynchronous programming techniques (inherited from upstream Fulcrum).
+- *A drop-in replacement for ElectrumX, now for PLM:* Speaks the [Electrum Cash protocol](https://electrum-cash-protocol.readthedocs.io/en/latest/) against a `palladiumd` node.
+- *Palladium-aware:* native `PLM` coin detection, address codec (`P...`/`3...` mainnet, Bech32 `plm1...`), and SegWit-correct serialization from height 29000 onward.
+- *Dockerized:* a ready-to-run `docker-compose.yml` brings up `palladiumd` + `fulcrum-plm` together with TLS auto-provisioned.
+
+### What was changed for PLM
+
+- `Coin::PLM` added to the coin enum, with name mapping and RPC-based auto-detection in `BitcoinD`.
+- PLM address codec: P2PKH (`0x37`, `P...`), P2SH (`0x05`, `3...`), WIF (`0x80`), Bech32 HRPs `plm`/`tplm`/`rplm`.
+- SegWit serialization enabled for PLM in `Controller`.
+- BCH-only features (DSProof, RPA, CashTokens) are not exposed for PLM.
+- Unit tests for coin name mapping and PLM address encoding (`./Fulcrum --test`).
+
+See the file headers in `src/` for exactly which files carry PLM modifications, and `git log` for the full history. The PLM consensus parameters this server needs to be aware of (coinbase maturity, fork heights, difficulty schedule) are documented in `coin_spec.md`.
 
 ### Requirements
 
 - *For running*:
-  - A supported bitcoin full node with its JSON-RPC service enabled, preferably running on the same machine.
-    - *For **BCH***: Bitcoin Cash Node, Bitcoin Cash Unlimited, Flowee, and bchd have all been tested extensively and are known to work well with this software.
-    - *For **BTC***: Bitcoin Core v0.17.0 or later.  Bitcoin Knots is also known to work perfectly well.
-      - Note: Bitcoin Core and/or Bitcoin Knots >= v28.0.0 are recommended for full Electrum Protocol v1.6 support.
-    - *For **LTC***: Litecoin Core v0.17.0 or later.  No other full nodes are supported by this software for LTC.
-      - If using Litcoin Core v0.21.2 or above, your daemon is serializing data using mweb extensions. While Fulcrum understands this serialization format, your Electrum-LTC clients may not. You can run `litecoind` with `-rpcserialversion=1` to have your daemon return transactions in pre-mweb format which is understood by most Electrum-LTC clients.
-    - The node must have txindex enabled e.g. `txindex=1`.
-    - The node must not be a pruning node.
-    - *Optional*: For best results, enable zmq for the "hasblock" topic using e.g. `zmqpubhashblock=tcp://0.0.0.0:8433` in your `bitcoin.conf` file (zmq is only available on: Core, BCHN, BU 1.9.1+, or Litecoin Core).
-  - *Recommended hardware*: Minimum 1GB RAM, 64-bit CPU, ~40GB disk space for mainnet BCH, 133GB for BTC (as of Aug 2023). For best results, use an SSD rather than an HDD.
-- *For compiling*: 
-  - `Qt Core` & `Qt Networking` libraries `5.15.2` or above (I use `6.10.0` myself).  Qt `5.15.1` (or earlier) is not supported.
-  - *Optional but recommended*:
-    - `libzmq 4.x` development headers and library (also known as `libzmq3-dev` on Debian/Ubuntu and `zeromq-devel` on Fedora). Fulcrum will run just fine without linking against `libzmq`, but it will run better if you do link against `libzmq` and also turn on `zmqpubhashblock` notifications in `bitcoind` (zmq is only available on: Core, BCHN, or BU 1.9.1+).
-    - `libminiupnpc 2.x/3.x` development headers and library (also known as `libminiupnpc-dev` on Debuan/Ubuntu and `miniupnpc-devel` on Fedora). Fulcrum will run just fine without this library, but it is needed if you want Fulcrum to use UPnP to open up firewall ports on your router (CLI arg: `--upnp`, conf var: `upnp=true`).
-  - A modern, 64-bit `C++20` compiler.  `clang-17` or `g++-13` are recommended. MSVC on Windows is not supported (please use `MinGW G++` instead, which ships with Qt Open Source Edition for Windows).
+  - A [`palladiumd`](https://github.com/palladium-coin/palladiumcore) node with its JSON-RPC service enabled, preferably on the same machine, with `txindex=1` and not pruning.
+  - *Optional*: ZMQ notifications (`zmqpubrawblock`/`zmqpubrawtx`/`zmqpubhashblock`) — auto-discovered via the `getzmqnotifications` RPC if configured in `palladium.conf`.
+  - *Recommended hardware*: similar to Bitcoin Core — an SSD is strongly recommended.
+- *For compiling*:
+  - `Qt Core` & `Qt Networking` libraries `5.15.2` or above.
+  - *Optional but recommended*: `libzmq3-dev` and `libminiupnpc-dev`.
+  - A modern, 64-bit `C++20` compiler. `clang-17` or `g++-13` are recommended.
 
-### Quickstart
+### Quickstart with Docker
 
-1. Download a [pre-built static binary](https://github.com/cculianu/Fulcrum/releases).
-2. Verify that the binary runs on your system by executing the binary with `./Fulcrum -h` to see the CLI options.
-3. Setup a configuration file and to point Fulcrum to your bitcoind JSON-RPC server, specify listening ports, TLS certificates, etc.  See: [doc/fulcrum-example-config.conf](https://github.com/cculianu/Fulcrum/blob/master/doc/fulcrum-example-config.conf) and/or [doc/fulcrum-quick-config.conf](https://github.com/cculianu/Fulcrum/blob/master/doc/fulcrum-quick-config.conf)
-4. Also see this section below on [Running Fulcrum](#running-fulcrum).
+The included `docker-compose.yml` runs `palladiumd` and `fulcrum-plm` together on a shared Docker network, with TLS auto-provisioned for the Electrum SSL listener.
+
+```bash
+cp .env.example .env        # set RPC_USER / RPC_PASSWORD
+docker compose up -d
+docker compose logs -f fulcrum-plm
+```
+
+- `palladiumd` data persists in `palladium-node/.palladium/` (bind-mounted).
+- `fulcrum-plm` data persists in `fulcrum-db/` (bind-mounted).
+- A self-signed TLS certificate is generated on first run into `ssl/`.
+- Ports exposed on the host: `2333` (PLM P2P), `50001`/`50002` (Electrum TCP/SSL), `127.0.0.1:8000` (admin, host-only).
 
 ### How To Compile
 
-Compiling is for those users that do not wish to use the [pre-built static binaries provided here](https://github.com/cculianu/Fulcrum/releases), or for users on platforms for which the static binaries are not provided (such as FreeBSD or macOS). To compile, it's recommended you use the Qt Creator IDE.
+To compile without Docker, you'll need a `palladiumd` node running separately. To compile Fulcrum itself:
 
-1. Get the latest version of Qt Open Source Edition for your platform.
-2. Point the Qt Creator IDE at the `Fulcrum.pro` file.
-3. Set the build configuration to "Release".  Hit Build.  It should "just work".
-
-You may also build from the CLI (on Linux and MacOS):
-
-1. Make sure you have `qmake` in your path and all the requisite Qt5 dev libs installed.
+1. Make sure you have `qmake` in your path and all the requisite Qt5/Qt6 dev libs installed.
 2. `qmake` (to generate the Makefile)
-3. `make -j8`  (replace 8 here with the number of cores on your machine)
+3. `make -j$(nproc)`
 
-**A note for Linux users**: You may have to install the Qt5 or Qt6 networking package separately such as `libqt5network5` or `libqt6network6` (depending on your distribution). You also need `libbz2-dev` otherwise compilation will fail. If you are having trouble finding the required Qt versions, you can try this link: https://launchpad.net/~beineri (for Ubuntu/Debian ppas). For best results, you may wish to also ensure you have the following installed: `pkg-config`, `libzmq` (aka `libzmq3-dev` on Debian/Ubuntu, `zeromq-devel` on Fedora), and `libminiupnpc` (aka `libminiupnpc-dev` on Debian/Ubuntu, `miniupnpc-devel` on Fedora).
+**A note for Linux users**: you also need `libbz2-dev`, otherwise compilation will fail.
 
-**A note for Windows users**: `Qt 5.15.2` (or above) with `MinGW G++ 11.x.x` (or above) is the compiler/Qt kit you should be using.  MSVC is not supported by this codebase at the present time.
+#### Linking against the system `librocksdb.so` (experimental, Linux only)
 
-#### What to do if compiling fails
-If you have problems compiling, the most likely culprit would be your compiler not being `C++20` compliant (please use a recent version of `gcc` or `clang` on Linux, Apple's `Xcode` on Mac, or `MinGW G++ 11.x` or above on Windows).
-
-The other likely culprit is the fact that at the present time I have included a statically-built `librocksdb` in the codebase. There are versions of this library for Windows, Mac, and Linux included right in the source tree, and `Fulcrum.pro` looks for them and links to them. Instructions are included within the `Fulcrum.pro` project file about how to build your own static `librocksdb` if the bundled one does not work on your system.
-
-If you are still having trouble, [file an issue here in this github](https://github.com/cculianu/Fulcrum/issues).
-
-#### Linking against the system `librocksdb.so` (experimental)
-
-You may optionally build against the **system rocksdb** (Linux only) if your distribution offers `rocksdb` version `6.6.4` or newer.
-
-1. `qmake LIBS+=-lrocksdb`  (to generate the Makefile **without** linking to the included static lib)
-2. `make clean && make -j8` (replace 8 here with the number of cores on your machine)
-
-**Note**: Some Linux distributions have been known to package `librocksdb.so` incorrectly. [See here for an example](https://bugs.archlinux.org/task/65093), so until I can be confident most distributions do it right, I am considering using the system `librocksdb.so` an ***experimental feature*** for the time being (in principle it should work ok if the library is compiled correctly).
-
-#### Making sure `libzmq` is detected and used (optional but recommended)
-
-Ensure that `libzmq3` (Debian/Ubuntu) and/or `zeromq-devel` (Fedora/Redhat) is installed, and that `pkg-config` is also installed.  If on Unix (macOS, Linux, or Windows MinGW), then ideally the `qmake` step will find `libzmq` on your system and automatically use it. If that is not the case, you may try passing flags to `qmake` such as `LIBS+="-L/path/to/libdir_containting_libzmq -lzmq"` and `INCLUDEPATH+="/path/to/dir_containing_zmq_h"` as arguments when you invoke `qmake`.  Using `libzmq` is optional but highly recommended. If you have trouble getting Fulcrum to compile against your `libzmq`, [open a new issue](https://github.com/cculianu/Fulcrum/issues) and maybe I can help.
-
-#### Making sure `libminiupnpc` is detected and used (optional)
-
-Ensure that `libminiupnpc` (Debian/Ubuntu) and/or `miniupnpc-devel` (Fedora/Redhat) is installed, and that `pkg-config` is also installed.  If on Unix (macOS, Linux, or Windows MinGW), then ideally the `qmake` step will find `libminiupnpc` on your system and automatically use it. If that is not the case, you may try passing flags to `qmake` such as `LIBS+="-L/path/to/dir_containing_libminiupnpc -lminiupnpc"` and `INCLUDEPATH+="/path/to/dir_containing_miniupnpc_headers_dir"` as arguments when you invoke `qmake`.  Using `libminiupnpc` is optional but necessary if you want UPnP support in Fulcrum. If you have trouble getting Fulcrum to compile against your `libminiupnpc`, [open a new issue](https://github.com/cculianu/Fulcrum/issues) and maybe I can help.
-
-### Building the Windows static `Fulcrum.exe`
-
-**New!** I recently added a mechanism using Docker to build a statically-linked
-Windows `.exe`. This build is 100% compatible with any stock 64-bit Windows 7 or
-above system -- you don't have to install anything -- it *just works*. You can
-download the pre-built `.exe` yourself here from the [releases
-page](https://github.com/cculianu/Fulcrum/releases).
-
-If you want to build it yourself though, you can do so, but it requires
-[Docker](https://www.docker.com/) on either a MacOS or a Linux host system (it
-may work on Windows too with Linux tools for Windows -- but I haven't tried it
-myself). It builds *all* dependencies, including a static Qt and static rocksdb.
-As such, it may take a while so be patient.
-
-1. Make sure Docker is installed such that you don't need to use `sudo`. This is the default on MacOS, but on Linux you may need to [follow these instructions here](https://docs.docker.com/install/linux/linux-postinstall/).
-
-2. Run the build script:
-
-    `$ contrib/build/build.sh windows master`
-
-The first argument to the script is the platform to build (in this case
-`windows`). The second argument to the script is a git `branch` or `tag` to
-build. Two `.exe` files will be generated, `Fulcrum.exe` and `FulcrumAdmin.exe`,
-which will appear in `dist/win` after the build process completes.
-
-- *Note:* You can point the build script to any repository, not just this one, by giving it a `GIT_REPO` environment variable:
-
-    `$ GIT_REPO=https://github.com/myusername/MyFulcrumFork contrib/build/build.sh windows master`
-
-    `$ GIT_REPO=$(pwd) contrib/build/build.sh windows master`
-
-### Building a static executable for Linux
-
-**New!** I recently added a mechanism using Docker to build a statically-linked
-Linux executable. This build is 100% compatible with most stock 64-bit Linux
-systems with a new enough glibc. So on a relatively modern Linux system, you
-don't have to install anything -- it *just works*. You can download the
-pre-built binary yourself here from the [releases page](https://github.com/cculianu/Fulcrum/releases).
-
-If you want to build it yourself though, you can do so, but it requires [Docker](https://www.docker.com/)
-on either a MacOS or a Linux host system.  It builds a static Qt and static rocksdb.
-
-1. Make sure Docker is installed such that you don't need to use `sudo`. This is the default on MacOS, but on Linux you may need to [follow these instructions here](https://docs.docker.com/install/linux/linux-postinstall/).
-
-2. Run the build script:
-
-    `$ contrib/build/build.sh linux master`
-
-The first argument to the script is the platform to build (in this case
-`linux`). The second argument to the script is a git `branch` or `tag` to build.
-
-- *Note:* You can point the build script to any repository, not just this one, by giving it a `GIT_REPO` environment variable:
-
-    `$ GIT_REPO=https://github.com/myusername/MyFulcrumFork contrib/build/build.sh linux master`
-
-    `$ GIT_REPO=$(pwd) contrib/build/build.sh linux master`
+```bash
+qmake LIBS+=-lrocksdb && make clean && make -j$(nproc)
+```
 
 ---
 
-### Running Fulcrum
+### Running plm-fulcrum
 
-Execute the binary, with `-h` to see the built-in help, e.g. `./Fulcrum -h`. You can set most options from the CLI, but you can also specify a **config file** as an argument. See:
+Execute the binary with `-h` to see the built-in help, e.g. `./Fulcrum -h`. You can set most options from the CLI, but you can also specify a **config file** as an argument:
 
- - [doc/fulcrum-example-config.conf](https://github.com/cculianu/Fulcrum/blob/master/doc/fulcrum-example-config.conf) in the source tree. This sample config file is very well documented with comments.
- - [doc/fulcrum-quick-config.conf](https://github.com/cculianu/Fulcrum/blob/master/doc/fulcrum-quick-config.conf) in the source tree. This is a more abbreviated config file you can use as a starting point as well.
+```bash
+./Fulcrum doc/fulcrum-plm-config.conf
+```
 
-`Fulcrum` requires a `bitcoind` instance running either on `testnet` or `mainnet` (or `regtest` for testing), which you must tell it about via the CLI options or via the config file.  You also need to tell it what port(s) to listen on and optionally what SSL certificates to use (if using SSL). ***Note:*** *Electron Cash (and/or Electrum) at this time no longer support connecting to non-SSL servers, so you should probably configure SSL for production use*.
+See:
+- [`doc/fulcrum-plm-config.conf`](doc/fulcrum-plm-config.conf) — standalone (no Docker) setup against a local `palladiumd`.
+- [`doc/fulcrum-plm-docker.conf.template`](doc/fulcrum-plm-docker.conf.template) — the template rendered automatically by the Docker setup.
 
-It is recommended you specify a data dir (`-D` via CLI or `datadir=` via config file) on an SSD drive for best results.  Synching against `testnet` should take you about 10-20 minutes (more on slower machines), and mainnet can take anywhere from 4 hours to 20+ hours, depending on machine and drive speed.  I have not tried synching against mainnet on an HDD and it will probably take ***days*** if you are lucky.
-
-As long as the server is still synchronizing, all public-facing ports will not yet be bound for listening and as such an attempt to connect to one of the RPC ports will fail with a socket error such as e.g. "Connection refused". Once the server finishes synching it will behave like an ElectrumX server and it can receive requests from Electron Cash (or Electrum if on BTC).
-
-You may also wish to read the [Fulcrum manpage](https://github.com/cculianu/Fulcrum/blob/master/doc/unix-man-page.md).
-
+As long as the server is still synchronizing, public-facing ports will not yet be bound. Once it finishes syncing, it behaves like an ElectrumX server and can receive requests from any Electrum-protocol-compatible PLM wallet.
 
 #### Admin Script: FulcrumAdmin
 
-`Fulcrum` comes with an admin script (`Python 3.6+` is required on the system to run this script).  You may send commands to `Fulcrum` using this script. The script requires that an **admin port** (config var `admin=`, CLI arg `-a`) be configured for your server.  To run the script, execute `./FulcrumAdmin -h` and you will see a list of possible subcommands that you can send to `Fulcrum`. Below you see all available commands (the below assumes the `admin` port is on port `8000`):
+`Fulcrum` ships with an admin script (`Python 3.6+` required). It requires an **admin port** (config var `admin=`, CLI arg `-a`). Run `./FulcrumAdmin -h` for the full list of subcommands (`getinfo`, `stop`, `peers`, `query`, etc.), e.g.:
 
-    $ ./FulcrumAdmin -p 8000 addpeer              Add a peer to the server's list of peers
-    $ ./FulcrumAdmin -p 8000 ban                  Ban clients by ID and/or IP address
-    $ ./FulcrumAdmin -p 8000 banpeer              Ban peers by hostname suffix
-    $ ./FulcrumAdmin -p 8000 bitcoind_throttle    Query or set server bitcoind_throttle setting
-    $ ./FulcrumAdmin -p 8000 clients (sessions)   Print information on all the currently connected clients
-    $ ./FulcrumAdmin -p 8000 getinfo              Get server information
-    $ ./FulcrumAdmin -p 8000 kick                 Kick clients by ID and/or IP address
-    $ ./FulcrumAdmin -p 8000 listbanned (banlist) Print the list of banned IP addresses and peer hostnames
-    $ ./FulcrumAdmin -p 8000 loglevel             Set the server's logging verbosity
-    $ ./FulcrumAdmin -p 8000 maxbuffer            Query or set server max_buffer setting
-    $ ./FulcrumAdmin -p 8000 peers                Print peering information
-    $ ./FulcrumAdmin -p 8000 query                Query for balance, UTXO, and history information for one or more addresses
-    $ ./FulcrumAdmin -p 8000 rmpeer               Remove peers by hostname suffix
-    $ ./FulcrumAdmin -p 8000 simdjson             Get or set the server's 'simdjson' (JSON parser) setting
-    $ ./FulcrumAdmin -p 8000 stop (shutdown)      Gracefully shut down the server
-    $ ./FulcrumAdmin -p 8000 unban                Unban IP addresses
-    $ ./FulcrumAdmin -p 8000 unbanpeer            Unban peers by hostname suffix
+```bash
+./FulcrumAdmin -p 8000 getinfo
+```
 
 ---
 
 ### Protocol Documentation
 
-Documentation for the Electrum Cash protocol that Fulcrum uses is [available here](https://electrum-cash-protocol.readthedocs.io/en/latest/).
+This server speaks the [Electrum Cash protocol](https://electrum-cash-protocol.readthedocs.io/en/latest/), inherited unchanged from upstream Fulcrum. BCH-only extensions (DSProof, RPA, CashTokens) are not active for PLM.
 
 ---
 
 ### Platform Notes
 
-#### Windows
-
-This codebase will not compile correctly (or at all) using MSVC. Please use the `MinGW` and/or `G++` kit in Qt Creator to build this software.
-
-#### Linux
-
-Be sure you have a recent gcc that support C++20. I am using gcc-13 in my docker builders, but gcc-11 *should* work too.
-
-#### MacOS
-
-Everything should just work (I use MacOS as my dev machine).
+Inherited from upstream Fulcrum: Linux needs a C++20-capable `gcc`/`clang` (`gcc-13`+ recommended); Windows requires `MinGW G++` (MSVC unsupported); macOS should work out of the box. This fork has been developed and tested on Linux.
 
 ---
 
 ### F.A.Q.
 
+**Q:** Why does this fork exist instead of using upstream Fulcrum directly?
 
+**A:** Upstream Fulcrum supports BCH, BTC and LTC, but has no notion of Palladium's coin-specific rules (address prefixes, SegWit activation height, coinbase maturity, difficulty schedule). This fork teaches it about PLM while reusing all of Fulcrum's existing Electrum-protocol and storage machinery.
 
-**Q:** Why Qt?  This isn't a GUI app!
+**Q:** Is this affiliated with the Palladium Core project?
 
-**A:** Yes, I know.  However, Qt is a very robust, cross-platform and fast application framework.  You can use its "Core" library for console apps, servers, etc.  It has great network support and other basic things a programmer needs to get stuff done.
-
-**Q:** Why is the compiled binary called `Fulcrum` (capital `F`) and not `fulcrum` (lowercase `f`) as is customary on Linux/Unix?
-
-**A:** Because I like capital letters, even on Linux.  I also develop (this and other software) for macOS and Windows and over there the Linux/Unix lowecase thing looks a little out-of-place.  Perhaps my sensibilities have been affected by my win32 and macOS dev work, or perhaps I'm just unconventional.  Embrace the lack of convention here! That being said, if the capital `F` bothers you, feel free to rename it or represent it as `fulcrum` wherever you like.
+**A:** No. This is an independent fork that adds client-side (SPV server) support for PLM; it does not modify or redistribute `palladiumd` itself, which is built from its own [upstream releases](https://github.com/palladium-coin/palladiumcore) in the Docker setup.
 
 ---
 
-### Donations
+### Credits
 
-#### Sure!  Send **BCH** here:
+This project is a fork of [**Fulcrum**](https://fulcrumserver.org/) by **Calin A. Culianu** ([cculianu/Fulcrum](https://github.com/cculianu/Fulcrum)) — all of the core Electrum-protocol server, RocksDB storage engine, and BCH/BTC/LTC support is his work. PLM support and the Docker deployment setup were added on top of it by **Davide Grilli**. See [AUTHORS](AUTHORS) for the full breakdown.
 
-**`bitcoincash:qphax4s4n9h60jxj2fkrjs35w2tvgd4wzvf52cgtzc`**
-
-[![bitcoincash:qphax4s4n9h60jxj2fkrjs35w2tvgd4wzvf52cgtzc](https://raw.githubusercontent.com/cculianu/DonateSpareChange/master/donate.png)](bitcoincash:qphax4s4n9h60jxj2fkrjs35w2tvgd4wzvf52cgtzc)
-
-### Or, for anonymity you can donate to this **BCH RPA address**: 
-
-**`paycode:qygqyce24f7n6q2u36r8t332z5426ul78v7z0ynl6v9wlmk9tt28adksqgc0fzge8fk6ux8cj9tjvp8mkakvfzkgwqzj5h4n9tnfcpscsn7wxqqqqqqqzzmxze04`**
-
-[![paycode:qygqyce24f7n6q2u36r8t332z5426ul78v7z0ynl6v9wlmk9tt28adksqgc0fzge8fk6ux8cj9tjvp8mkakvfzkgwqzj5h4n9tnfcpscsn7wxqqqqqqqzzmxze04](https://c3-soft.com/downloads/Bitcoin/imgs/fulcrum_donation_paycode_2.png)](paycode:qygqyce24f7n6q2u36r8t332z5426ul78v7z0ynl6v9wlmk9tt28adksqgc0fzge8fk6ux8cj9tjvp8mkakvfzkgwqzj5h4n9tnfcpscsn7wxqqqqqqqzzmxze04)
-
-### You may also send **BTC**:
-
-This is the BTC-equivalent of the above BCH address, which is: **`1BCHBCH6TXBaXyc5HReLBm1sNytBF2kkPD`**
-[![1BCHBCH6TXBaXyc5HReLBm1sNytBF2kkPD](https://c3-soft.com/downloads/Bitcoin/imgs/btc_address_qrcode_1.png)](1BCHBCH6TXBaXyc5HReLBm1sNytBF2kkPD)
-
----
-
-### Sponsors
-
-![General Protocols](https://c3-soft.com/imgs/general-protocols.png)
+If you are looking for the original multi-coin (BCH/BTC/LTC) server, use the upstream project linked above. For the Palladium daemon (`palladiumd`) itself, see [palladium-coin/palladiumcore](https://github.com/palladium-coin/palladiumcore).
