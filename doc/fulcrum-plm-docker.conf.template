@@ -17,5 +17,8 @@ key  = /data/ssl/fulcrum-plm.key
 # the "127.0.0.1:8000:8000" port mapping in docker-compose.yml, not here.
 admin = 0.0.0.0:8000
 
-peering  = false
-announce = false
+peering  = true
+hostname = ${PUBLIC_HOST}
+announce = ${ANNOUNCE}
+public_tcp_port = ${PUBLIC_TCP_PORT}
+public_ssl_port = ${PUBLIC_SSL_PORT}
