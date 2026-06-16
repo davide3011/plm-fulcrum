@@ -1,0 +1,27 @@
+plm-fulcrum — Authors and Copyright Holders
+============================================
+
+Original project (Fulcrum)
+---------------------------
+Calin A. Culianu <calin.culianu@gmail.com>
+https://github.com/cculianu/Fulcrum
+
+Fulcrum is the upstream SPV server for Bitcoin Cash, Bitcoin (BTC) and
+Litecoin that this project is forked from. All core Electrum-protocol
+server logic, the RocksDB storage engine, and BCH/BTC/LTC support are
+his work. Copyright (C) 2019-2026.
+
+Palladium (PLM) fork (plm-fulcrum)
+------------------------------------
+Davide Grilli <davide.grilli@outlook.com>
+https://github.com/davide3011/plm-fulcrum
+
+Added Palladium (PLM) coin support: coin detection, address codec,
+SegWit serialization wiring, PLM-specific unit tests, and the Docker
+deployment setup (palladiumd + fulcrum-plm). Copyright (C) 2025-2026.
+
+----
+
+This is a derivative work distributed under the GNU General Public
+License v3 (or, at your option, any later version), the same license
+as the original Fulcrum project. See LICENSE.txt for the full text.
