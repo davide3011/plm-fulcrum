@@ -57,6 +57,7 @@ docker compose logs -f fulcrum-plm
 - `fulcrum-plm` data persists in `fulcrum-db/` (bind-mounted).
 - A self-signed TLS certificate is generated on first run into `ssl/`.
 - Ports exposed on the host: `2333` (PLM P2P), `50001`/`50002` (Electrum TCP/SSL), `127.0.0.1:8000` (admin, host-only).
+- If any of those host ports are already in use, remap only the host side of the binding in `docker-compose.yml` (the `ports:` section of the relevant service), leaving the container-side port unchanged, e.g. `"60001:50001"`. No changes are needed to `doc/fulcrum-plm-docker.conf.template` or `.env`.
 
 ### Running palladiumd standalone (no Docker)
 
