@@ -13,7 +13,9 @@ ssl = 0.0.0.0:50002
 cert = /data/ssl/fulcrum-plm.crt
 key  = /data/ssl/fulcrum-plm.key
 
-admin = 127.0.0.1:8000
+# Bound to 0.0.0.0 inside the container — host-only exposure is enforced by
+# the "127.0.0.1:8000:8000" port mapping in docker-compose.yml, not here.
+admin = 0.0.0.0:8000
 
 peering  = false
 announce = false
