@@ -1,0 +1,25 @@
+# Build artifacts — rebuilt inside the container
+*.o
+*.a
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+Makefile
+Makefile.*
+.qmake.cache
+.qmake.stash
+config.log
+# config.tests/ contains qmake feature-detection sources — must NOT be excluded
+# Only exclude the compiled test binaries inside each subdir:
+config.tests/*/Makefile
+config.tests/*/test
+Fulcrum
+
+# Runtime data — provided via bind mounts
+fulcrum-db/
+ssl/
+palladium-node/.palladium/
+
+# Dev tooling
+.git/
+*.pro.user*

@@ -1,0 +1,19 @@
+# Fulcrum configuration for Palladium (PLM) — Docker container
+# Generated at container startup by fulcrum-entrypoint.sh via envsubst.
+# DO NOT edit directly — set values in the root .env file.
+
+datadir = /data/db
+
+bitcoind    = palladiumd:2332
+rpcuser     = ${RPC_USER}
+rpcpassword = ${RPC_PASSWORD}
+
+tcp = 0.0.0.0:50001
+ssl = 0.0.0.0:50002
+cert = /data/ssl/fulcrum-plm.crt
+key  = /data/ssl/fulcrum-plm.key
+
+admin = 127.0.0.1:8000
+
+peering  = false
+announce = false
