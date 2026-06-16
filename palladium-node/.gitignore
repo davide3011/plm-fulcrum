@@ -1,0 +1,26 @@
+# Sensitive — never commit
+.env
+
+# Downloaded binaries
+daemon/palladiumd
+daemon/palladium-cli
+daemon/palladium-tx
+daemon/palladium-wallet
+
+# Blockchain data (large, machine-specific)
+.palladium/blocks/
+.palladium/chainstate/
+.palladium/database/
+.palladium/indexes/
+.palladium/banlist.dat
+.palladium/db.log
+.palladium/debug.log
+.palladium/fee_estimates.dat
+.palladium/mempool.dat
+.palladium/peers.dat
+.palladium/wallet.dat
+.palladium/.lock
+.palladium/.walletlock
+.palladium/palladiumd.pid
+# Generated at startup — not a source file
+.palladium/palladium.conf
