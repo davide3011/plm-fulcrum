@@ -6,7 +6,7 @@ TEMPLATE="/fulcrum-tpl/fulcrum-plm-docker.conf.template"
 
 : "${RPC_USER:?RPC_USER is not set. Copy .env.example to .env and fill in values.}"
 : "${RPC_PASSWORD:?RPC_PASSWORD is not set. Copy .env.example to .env and fill in values.}"
-: "${PUBLIC_HOST:?PUBLIC_HOST is not set. Set it to this VPS's public IP in .env.}"
+: "${PUBLIC_HOST:?PUBLIC_HOST is not set. Set it to the public IP of this server in .env.}"
 
 mkdir -p /data
 envsubst < "$TEMPLATE" > "$CONFIG_FILE"
